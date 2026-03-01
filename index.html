@@ -265,6 +265,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <a href="#sales-sec">💼 Sales <span class="nbadge" id="sales-count-badge">0</span></a>  
   <a href="#outage-sec">⚡ Outages</a>  
   <a href="#weather-sec">🌤 Weather</a>  
+  <a href="#cloud-sec">☁️ Sync</a>  
   <a href="#lb-sec">🏆 Board</a>  
   <span class="nclock" id="clock">--:--</span>  
 </nav>  
@@ -555,7 +556,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <div class="sec-label">— CONDITIONS</div>  
   <div class="sec-head">  
     <span style="font-size:22px;font-weight:900;">🌤 Weather — Monterey County</span>  
-    <div style="display:flex;gap:8px;">  
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button id="wx-btn-monterey"   class="btn btn-g btn-sm" onclick="switchWeatherCity('monterey')"    style="background:var(--cyan);color:#000;">Monterey</button>
+      <button id="wx-btn-watsonville" class="btn btn-g btn-sm" onclick="switchWeatherCity('watsonville')">Watsonville</button>
+      <button id="wx-btn-gilroy"     class="btn btn-g btn-sm" onclick="switchWeatherCity('gilroy')">Gilroy</button>
       <button class="btn btn-g btn-sm" onclick="toggleWeatherUnit()">°F / °C</button>  
       <button class="btn btn-g btn-sm" id="weather-refresh-btn" onclick="fetchWeather()">🔄 Refresh</button>  
     </div>  
@@ -564,7 +568,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div id="weather-alerts-area"></div>  
     <div class="wx-hero">  
       <div style="flex:1;">  
-        <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--cyan);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">📍 Monterey, California</div>  
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--cyan);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;" id="w-city-label">📍 Monterey, California</div>  
         <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">  
           <div style="font-family:'IBM Plex Mono',monospace;font-size:64px;font-weight:900;line-height:1;"><span id="w-temp-num">--</span><sup style="font-size:24px;color:var(--t2);" id="w-temp-unit">°F</sup></div>  
           <div>  
@@ -603,6 +607,68 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>  
 </section>  
 <hr class="div">  
+
+<!-- ═══ CLOUD SYNC ══════════════════════════════════════════════════ -->
+
+<section id="cloud-sec" class="sec">
+  <div class="sec-label">— DATA</div>
+  <div class="sec-head">
+    <span style="font-size:22px;font-weight:900;">☁️ Cloud Sync</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <span id="cloud-status-badge" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,0.08);color:var(--t2);font-family:'IBM Plex Mono',monospace;">⬜ Not configured</span>
+      <button class="btn btn-g btn-sm" onclick="openCloudSettings()">⚙️ Setup</button>
+      <button class="btn btn-g btn-sm" onclick="cloudPush()" id="cloud-push-btn">⬆ Push</button>
+      <button class="btn btn-g btn-sm" onclick="cloudPull()" id="cloud-pull-btn">⬇ Pull</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:16px;">
+    <div class="card" style="padding:14px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t2);margin-bottom:6px;">📦 What Gets Synced</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.7;">✅ Appointments &amp; leads<br>✅ Sales records<br>✅ Leaderboard reps<br>✅ App settings &amp; PIN</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t2);margin-bottom:6px;">🔒 How It Works</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.7;">Uses <strong style="color:var(--t1);">JSONBin.io</strong> — free &amp; open source compatible. Your API key stays in your browser. Data is stored in your private bin, accessible from any device with the same key.</div>
+    </div>
+    <div class="card" style="padding:14px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t2);margin-bottom:6px;">📅 Last Sync</div>
+      <div id="cloud-last-push" style="font-size:12px;color:var(--t2);font-family:'IBM Plex Mono',monospace;">Push: —</div>
+      <div id="cloud-last-pull" style="font-size:12px;color:var(--t2);font-family:'IBM Plex Mono',monospace;margin-top:4px;">Pull: —</div>
+      <div id="cloud-log" style="font-size:11px;color:var(--t3);margin-top:8px;min-height:16px;"></div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--t3);padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:6px;border-left:3px solid var(--cyan);">
+    🆓 <strong style="color:var(--t2);">Free setup:</strong> Create an account at <strong>jsonbin.io</strong>, copy your Master Key and a Bin ID, then click ⚙️ Setup above. All your field data will sync instantly across phones, tablets, and computers.
+  </div>
+</section>
+<hr class="div">
+
+<!-- Cloud Settings Modal -->
+
+<div class="mo" id="cloud-modal" onclick="if(event.target===this)closeCloudSettings()">
+  <div class="mo-box" style="max-width:460px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <span style="font-size:18px;font-weight:900;">☁️ Cloud Sync Setup</span>
+      <button class="btn btn-g btn-sm" onclick="closeCloudSettings()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:16px;line-height:1.7;">
+      1. Go to <a href="https://jsonbin.io" target="_blank" style="color:var(--cyan);">jsonbin.io</a> and create a free account.<br>
+      2. In your dashboard, copy your <strong style="color:var(--t1);">Master Key</strong>.<br>
+      3. Create a new Bin (or use an existing one) and copy its <strong style="color:var(--t1);">Bin ID</strong>.<br>
+      4. Paste both below — your data syncs across all devices instantly.
+    </div>
+    <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t2);">Master Key (X-Master-Key)</label>
+    <input type="password" id="cloud-api-key" placeholder="$2a$10$…" style="width:100%;margin:6px 0 14px;font-size:13px;font-family:'IBM Plex Mono',monospace;">
+    <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t2);">Bin ID</label>
+    <input type="text" id="cloud-bin-id" placeholder="64abc123…" style="width:100%;margin:6px 0 18px;font-size:13px;font-family:'IBM Plex Mono',monospace;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="btn btn-g btn-sm" onclick="testCloudConnection()">🔌 Test Connection</button>
+      <button class="btn btn-g btn-sm" onclick="createNewBin()" style="background:rgba(0,212,255,0.1);border-color:var(--cyan);">📦 Create New Bin</button>
+      <button class="btn btn-sm" style="background:var(--cyan);color:#000;font-weight:700;" onclick="saveCloudSettings()">💾 Save</button>
+    </div>
+    <div id="cloud-test-result" style="margin-top:12px;font-size:12px;font-family:'IBM Plex Mono',monospace;min-height:18px;"></div>
+  </div>
+</div>
 
 <!-- ═══ LEADERBOARD ══════════════════════════════════════════════════ -->  
 
@@ -906,8 +972,14 @@ let calView  = 'month';
 let calSelectedDate = null;
 let weatherUnitF = true;
 let weatherData  = null;
-const WX_LAT = 36.6002;
-const WX_LON = -121.8947;
+const WEATHER_CITIES = {
+  monterey:   { label: '📍 Monterey, CA',   lat: 36.6002,  lon: -121.8947 },
+  watsonville:{ label: '📍 Watsonville, CA', lat: 36.9102,  lon: -121.7569 },
+  gilroy:     { label: '📍 Gilroy, CA',      lat: 37.0058,  lon: -121.5683 },
+};
+let currentWeatherCity = 'monterey';
+let WX_LAT = WEATHER_CITIES.monterey.lat;
+let WX_LON = WEATHER_CITIES.monterey.lon;
 
 const STATUS_COLORS = {
   'prospect':   '#7a9ab5',
@@ -2504,6 +2576,26 @@ function tempDisplay(c) {
   return weatherUnitF ? `${cToF(c)}°F` : `${Math.round(c)}°C`;  
 }  
   
+function switchWeatherCity(key) {
+  const city = WEATHER_CITIES[key];
+  if (!city) return;
+  currentWeatherCity = key;
+  WX_LAT = city.lat;
+  WX_LON = city.lon;
+  // Update city label in hero
+  const lbl = document.getElementById('w-city-label');
+  if (lbl) lbl.textContent = city.label;
+  // Update active button style
+  ['monterey','watsonville','gilroy'].forEach(k => {
+    const b = document.getElementById(`wx-btn-${k}`);
+    if (b) {
+      b.style.background = k === key ? 'var(--cyan)' : '';
+      b.style.color = k === key ? '#000' : '';
+    }
+  });
+  fetchWeather();
+}
+
 async function fetchWeather() {  
   const btn = document.getElementById('weather-refresh-btn');  
   if (btn) { btn.textContent = '⏳ Loading…'; btn.disabled = true; }  
@@ -2533,7 +2625,7 @@ async function fetchWeather() {
     } catch(err) {  
       if (attempt === 2) {  
         // Both attempts failed — fall back to mock  
-        console.info(`Weather unavailable (${err.message}), using estimated data.`);  
+        console.log(`Weather unavailable (${err.message}), using estimated data.`);  
         renderWeatherMock();  
         if (btn) { btn.textContent = '🔄 Retry'; btn.disabled = false; }  
         // Show non-alarming notice in the updated field  
@@ -2927,6 +3019,204 @@ function renderFieldAdvisory(current, daily) {
 function renderFCCResults() { renderDefaultISPs(); }
 function renderLocalFallback() { renderDefaultISPs(); }
 
+// ════════════════════════════════════════════════════════════════════
+//  CLOUD SYNC — JSONBin.io (free, open-source compatible)
+// ════════════════════════════════════════════════════════════════════
+const CLOUD_KEY_LS   = 'fieldops_cloud_apikey';
+const CLOUD_BIN_LS   = 'fieldops_cloud_binid';
+const JSONBIN_BASE   = 'https://api.jsonbin.io/v3/b';
+
+function getCloudCreds() {
+  return {
+    apiKey: localStorage.getItem(CLOUD_KEY_LS) || '',
+    binId:  localStorage.getItem(CLOUD_BIN_LS) || ''
+  };
+}
+
+function setCloudLog(msg, color) {
+  const el = document.getElementById('cloud-log');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--t3)'; }
+}
+
+function updateCloudBadge() {
+  const { apiKey, binId } = getCloudCreds();
+  const badge = document.getElementById('cloud-status-badge');
+  if (!badge) return;
+  if (apiKey && binId) {
+    badge.textContent = '🟢 Configured';
+    badge.style.color = '#4ade80';
+    badge.style.background = 'rgba(74,222,128,0.1)';
+  } else {
+    badge.textContent = '⬜ Not configured';
+    badge.style.color = 'var(--t2)';
+    badge.style.background = 'rgba(255,255,255,0.08)';
+  }
+}
+
+function openCloudSettings() {
+  const { apiKey, binId } = getCloudCreds();
+  const keyEl = document.getElementById('cloud-api-key');
+  const binEl = document.getElementById('cloud-bin-id');
+  if (keyEl) keyEl.value = apiKey;
+  if (binEl) binEl.value = binId;
+  const r = document.getElementById('cloud-test-result');
+  if (r) r.textContent = '';
+  document.getElementById('cloud-modal').style.display = 'flex';
+}
+
+function closeCloudSettings() {
+  document.getElementById('cloud-modal').style.display = 'none';
+}
+
+function saveCloudSettings() {
+  const key = (document.getElementById('cloud-api-key') || {}).value || '';
+  const bin = (document.getElementById('cloud-bin-id') || {}).value || '';
+  localStorage.setItem(CLOUD_KEY_LS, key.trim());
+  localStorage.setItem(CLOUD_BIN_LS, bin.trim());
+  updateCloudBadge();
+  closeCloudSettings();
+  setCloudLog('✅ Settings saved', '#4ade80');
+}
+
+async function testCloudConnection() {
+  const key = (document.getElementById('cloud-api-key') || {}).value || '';
+  const bin = (document.getElementById('cloud-bin-id') || {}).value || '';
+  const r = document.getElementById('cloud-test-result');
+  if (!key || !bin) { if (r) r.textContent = '❌ Enter both fields first.'; return; }
+  if (r) r.textContent = '⏳ Testing…';
+  try {
+    const resp = await fetch(`${JSONBIN_BASE}/${bin}/latest`, {
+      headers: { 'X-Master-Key': key }
+    });
+    if (resp.ok) {
+      if (r) { r.textContent = '✅ Connection successful!'; r.style.color = '#4ade80'; }
+    } else {
+      const j = await resp.json().catch(()=>({}));
+      if (r) { r.textContent = `❌ ${j.message || 'HTTP ' + resp.status}`; r.style.color = '#f87171'; }
+    }
+  } catch(e) {
+    if (r) { r.textContent = `❌ Network error: ${e.message}`; r.style.color = '#f87171'; }
+  }
+}
+
+async function createNewBin() {
+  const key = (document.getElementById('cloud-api-key') || {}).value || '';
+  const r = document.getElementById('cloud-test-result');
+  if (!key) { if (r) r.textContent = '❌ Enter Master Key first.'; return; }
+  if (r) r.textContent = '⏳ Creating bin…';
+  try {
+    const payload = { fieldops: true, created: new Date().toISOString(), data: {} };
+    const resp = await fetch(JSONBIN_BASE, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': key,
+        'X-Bin-Name': 'FieldOps CRM'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (resp.ok) {
+      const j = await resp.json();
+      const newBinId = j.metadata && j.metadata.id;
+      if (newBinId) {
+        const binEl = document.getElementById('cloud-bin-id');
+        if (binEl) binEl.value = newBinId;
+        if (r) { r.textContent = `✅ Bin created! ID: ${newBinId}`; r.style.color = '#4ade80'; }
+      }
+    } else {
+      const j = await resp.json().catch(()=>({}));
+      if (r) { r.textContent = `❌ ${j.message || 'HTTP ' + resp.status}`; r.style.color = '#f87171'; }
+    }
+  } catch(e) {
+    if (r) { r.textContent = `❌ ${e.message}`; r.style.color = '#f87171'; }
+  }
+}
+
+function gatherLocalData() {
+  // Collect all FieldOps data from localStorage
+  const keys = ['appointments','sales','leaderboard','fieldops_settings','fieldops_pin'];
+  const bundle = { _meta: { app: 'FieldOps CRM', pushedAt: new Date().toISOString() } };
+  keys.forEach(k => {
+    try { const v = localStorage.getItem(k); if (v) bundle[k] = JSON.parse(v); } catch(e) { bundle[k] = null; }
+  });
+  // Also grab any APPS/LEADS data
+  ['leads','customers','installs'].forEach(k => {
+    try { const v = localStorage.getItem(k); if (v) bundle[k] = JSON.parse(v); } catch(e) {}
+  });
+  return bundle;
+}
+
+function applyRemoteData(bundle) {
+  if (!bundle || typeof bundle !== 'object') return;
+  const skip = ['_meta', 'fieldops', 'created', 'data'];
+  Object.keys(bundle).forEach(k => {
+    if (skip.includes(k)) return;
+    try { localStorage.setItem(k, JSON.stringify(bundle[k])); } catch(e) {}
+  });
+}
+
+async function cloudPush() {
+  const { apiKey, binId } = getCloudCreds();
+  if (!apiKey || !binId) { openCloudSettings(); return; }
+  setCloudLog('⬆ Pushing…', 'var(--cyan)');
+  const btn = document.getElementById('cloud-push-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    const payload = gatherLocalData();
+    const resp = await fetch(`${JSONBIN_BASE}/${binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': apiKey },
+      body: JSON.stringify(payload)
+    });
+    if (resp.ok) {
+      const ts = new Date().toLocaleTimeString();
+      const el = document.getElementById('cloud-last-push');
+      if (el) el.textContent = `Push: ${ts}`;
+      setCloudLog('✅ Data pushed to cloud', '#4ade80');
+    } else {
+      const j = await resp.json().catch(()=>({}));
+      setCloudLog(`❌ Push failed: ${j.message || resp.status}`, '#f87171');
+    }
+  } catch(e) {
+    setCloudLog(`❌ ${e.message}`, '#f87171');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬆ Push'; }
+  }
+}
+
+async function cloudPull() {
+  const { apiKey, binId } = getCloudCreds();
+  if (!apiKey || !binId) { openCloudSettings(); return; }
+  setCloudLog('⬇ Pulling…', 'var(--cyan)');
+  const btn = document.getElementById('cloud-pull-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    const resp = await fetch(`${JSONBIN_BASE}/${binId}/latest`, {
+      headers: { 'X-Master-Key': apiKey }
+    });
+    if (resp.ok) {
+      const j = await resp.json();
+      const bundle = j.record || j;
+      applyRemoteData(bundle);
+      const ts = new Date().toLocaleTimeString();
+      const el = document.getElementById('cloud-last-pull');
+      if (el) el.textContent = `Pull: ${ts}`;
+      setCloudLog('✅ Data synced — reload page to apply', '#4ade80');
+    } else {
+      const j = await resp.json().catch(()=>({}));
+      setCloudLog(`❌ Pull failed: ${j.message || resp.status}`, '#f87171');
+    }
+  } catch(e) {
+    setCloudLog(`❌ ${e.message}`, '#f87171');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇ Pull'; }
+  }
+}
+
+function initCloudSync() {
+  updateCloudBadge();
+}
+
 
 function initApp() {  
   // file:// protocol detection  
@@ -2960,6 +3250,10 @@ function initApp() {
   // Pre-populate outage data with mock on first load
   setTimeout(() => renderOutages(stampedMockOutages()), 100);
   renderDefaultISPs();  // render ISP lists immediately  
+
+  // Initialize cloud sync badge
+  initCloudSync();
+
   // Preload activity log from storage  
   try {  
     const savedAct = JSON.parse(localStorage.getItem('fo_dash_activity') || '[]');  
