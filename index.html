@@ -259,14 +259,18 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 <nav class="snav">  
   <div class="snav-logo">⚡ FieldOps</div>  
-  <a href="#dash-sec">🏠 Dashboard</a>  
-  <a href="#map-sec">📍 Map <span class="nbadge" id="pin-count-badge">0</span></a>  
-  <a href="#cal-sec">📅 Appts <span class="nbadge" id="appt-count-badge">0</span></a>  
-  <a href="#sales-sec">💼 Sales <span class="nbadge" id="sales-count-badge">0</span></a>  
-  <a href="#outage-sec">⚡ Outages</a>  
-  <a href="#weather-sec">🌤 Weather</a>  
-  <a href="#cloud-sec">☁️ Sync</a>  
-  <a href="#lb-sec">🏆 Board</a>  
+  <a href="#dash-sec" onclick="event.preventDefault();scrollToSec('dash-sec')">🏠 Dashboard</a>  
+  <a href="#map-sec" onclick="event.preventDefault();scrollToSec('map-sec')">📍 Map <span class="nbadge" id="pin-count-badge">0</span></a>  
+  <a href="#cal-sec" onclick="event.preventDefault();scrollToSec('cal-sec')">📅 Appts <span class="nbadge" id="appt-count-badge">0</span></a>  
+  <a href="#sales-sec" onclick="event.preventDefault();scrollToSec('sales-sec')">💼 Sales <span class="nbadge" id="sales-count-badge">0</span></a>  
+  <a href="#outage-sec" onclick="event.preventDefault();scrollToSec('outage-sec')">⚡ Outages</a>  
+  <a href="#weather-sec" onclick="event.preventDefault();scrollToSec('weather-sec')">🌤 Weather</a>  
+  <a href="#broadband-section" onclick="event.preventDefault();scrollToSec('broadband-section')">📡 ISPs</a>  
+  <a href="#cloud-sec" onclick="event.preventDefault();scrollToSec('cloud-sec')">☁️ Sync</a>  
+  <a href="#lb-sec" onclick="event.preventDefault();scrollToSec('lb-sec')">🏆 Board</a>  
+  <span id="nav-weather-widget" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:0 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t2);flex-shrink:0;white-space:nowrap;">
+    <span id="hw-icon">🌡️</span><span id="hw-temp">—</span>
+  </span>
   <span class="nclock" id="clock">--:--</span>  
 </nav>  
 
@@ -303,6 +307,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="empty"><div class="empty-icon">📅</div>No appointments today.</div>  
       </div>  
     </div>  
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title">📝 Daily Field Notes <span style="font-size:9px;color:var(--green);">● Auto-saved</span></div>
+    <textarea id="daily-notes" placeholder="Notes for today's field session — routes, talking points, reminders…" style="min-height:90px;width:100%;" oninput="localStorage.setItem('fo_notes',this.value)"></textarea>
   </div>  
 </section>  
 <hr class="div">  
@@ -422,12 +430,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <button class="btn btn-g btn-sm" style="padding:3px 8px;" onclick="calNavMonth(1)">›</button>  
           <button class="btn btn-g btn-sm" style="padding:3px 6px;" onclick="calGoToday()">•</button>  
         </div>  
-        <div class="cal-grid">  
-          <div class="cal-dh">Su</div><div class="cal-dh">Mo</div><div class="cal-dh">Tu</div>  
-          <div class="cal-dh">We</div><div class="cal-dh">Th</div><div class="cal-dh">Fr</div>  
-          <div class="cal-dh">Sa</div>  
-        </div>  
-        <div class="cal-grid" id="cal-body"></div>  
+        <div id="cal-view-area"></div>  
       </div>  
     </div>  
     <div id="appt-list">  
@@ -456,6 +459,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="card-title">📅 Scheduled Installs <span id="install-count-badge" style="background:var(--cyan);color:#060b14;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:900;">0</span></div>  
     <div id="install-schedule-list"><div class="empty"><div class="empty-icon">📅</div>No installs scheduled.</div></div>  
   </div>  
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-title">📊 Pipeline Overview</div>
+    <div id="pipeline-list"><div class="empty"><div class="empty-icon">📊</div>No sales data yet.</div></div>
+  </div>
   <div class="card">  
     <div class="card-title" style="margin-bottom:8px;">  
       All Sales  
@@ -544,6 +551,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
     <div class="fg" style="margin-top:8px;"><label>Notes</label><textarea id="report-notes" placeholder="Details about the outage…" style="min-height:48px;"></textarea></div>
     <div id="outage-history" style="margin-top:12px;max-height:180px;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;">Submission History</span>
+        <button class="btn btn-g btn-sm" style="font-size:10px;padding:2px 8px;" onclick="clearOutageHistory()">🗑 Clear</button>
+      </div>
       <div id="history-log-list"></div>
     </div>
   </div>
@@ -565,7 +576,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>  
   </div>  
   <div id="weather-content">  
-    <div id="weather-alerts-area"></div>  
+    <div id="weather-alerts-area"></div>
+    <div id="field-advisory"></div>  
     <div class="wx-hero">  
       <div style="flex:1;">  
         <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--cyan);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;" id="w-city-label">📍 Monterey, California</div>  
@@ -646,7 +658,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <!-- Cloud Settings Modal -->
 
 <div class="mo" id="cloud-modal" onclick="if(event.target===this)closeCloudSettings()">
-  <div class="mo-box" style="max-width:460px;">
+  <div class="modal" style="max-width:460px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
       <span style="font-size:18px;font-weight:900;">☁️ Cloud Sync Setup</span>
       <button class="btn btn-g btn-sm" onclick="closeCloudSettings()">✕</button>
@@ -1151,7 +1163,8 @@ function loadState() {
 function saveLocal() {  
   localStorage.setItem('fo_pins', JSON.stringify(state.pins));  
   localStorage.setItem('fo_appts', JSON.stringify(state.appointments));  
-  localStorage.setItem('fo_sales', JSON.stringify(state.sales));  
+  localStorage.setItem('fo_sales', JSON.stringify(state.sales));
+  if (state.notes !== undefined) localStorage.setItem('fo_notes', state.notes);
 }  
   
 function renderDashboard() {  
@@ -2490,7 +2503,6 @@ function submitOutageReport() {
   document.getElementById('report-notes').value = '';  
   document.getElementById('report-rep').value = '';  
   alert(`✅ Outage report submitted!\n${isp} — ${location} (${sev} severity)\nView in History Log tab.`);  
-  switchInetView('history');  
   renderHistoryLog();  
 }  
   
@@ -2557,19 +2569,6 @@ function wmoDesc(code) {
   // label = full human-readable string without the trailing emoji  
   const label = (map[code] || 'Unknown').replace(/[\u{1F300}-\u{1FAFF}]|[\u2600-\u27BF]|☀️|⛅|🌦️|🌧️|⛈️|❄️|🌫️|🌡️/gu, '').trim();  
   return { desc: map[code] || 'Unknown', icon: e[code] || '🌡️', label: label || (map[code]||'Unknown').split(' ')[0] };  
-}  
-  
-function wxIcon(code) {  
-  if (code <= 232) return '⛈️';  
-  if (code <= 321) return '🌦️';  
-  if (code <= 531) return '🌧️';  
-  if (code <= 622) return '❄️';  
-  if (code === 800) return '☀️';  
-  if (code === 801) return '🌤️';  
-  if (code === 802) return '⛅';  
-  if (code <= 804) return '☁️';  
-  if (code >= 700) return '🌫️';  
-  return '🌡️';  
 }  
   
 function tempDisplay(c) {  
@@ -2807,12 +2806,6 @@ function toggleWeatherUnit() {
   if (weatherData) renderWeather(weatherData); else renderWeatherMock();  
 }  
   
-function updateHeaderWeather(d) {  
-  const c = d.current;  
-  const wx = wmoDesc(c.weather_code);  
-  updateHeaderWeatherDirect(wx.icon, tempDisplay(c.temperature_2m), wx.label);  
-}  
-  
 function filterISPList(query) {
   const q = query.toLowerCase();
   ['bb-monterey-isps','bb-watsonville-isps'].forEach(id => {
@@ -2864,13 +2857,9 @@ function renderDefaultISPs() {
   renderCity('watsonville', 'bb-watsonville-isps');
 }  
   
-// broadband map/FCC removed — ISP listing now rendered directly
-function initBroadbandMap() { /* no-op — FCC map removed */ }
-function lookupBroadband() { filterISPList(document.getElementById('bb-search-input')?.value || ''); }
 
-  
 /* ===================================================
-   MISSING FUNCTIONS — Added to resolve undefined references
+   UTILITY FUNCTIONS
    =================================================== */
 
 function metersToMiles(m) { return (m / 1609.344).toFixed(1); }
@@ -2929,10 +2918,6 @@ function switchOutageTab(tab) {
   if (tab === 'internet') renderInetOutages();
 }
 
-function fetchInternetOutages() {
-  renderInetOutages();
-}
-
 function renderInetOutages() {
   const now = new Date();
   const fmt = d => d.toISOString().slice(0,16).replace('T',' ');
@@ -2971,15 +2956,6 @@ function renderInetOutages() {
     </div>`).join('');
 }
 
-function switchInetView(view) {
-  ['outages','report','history'].forEach(v => {
-    const tab = document.getElementById('inet-tab-' + v);
-    const panel = document.getElementById('inet-panel-' + v);
-    if (tab) tab.classList.toggle('active', v === view);
-    if (panel) panel.style.display = v === view ? 'block' : 'none';
-  });
-}
-
 function renderAlerts(current, daily) {
   const el = document.getElementById('weather-alerts-area');
   if (!el) return;
@@ -3014,10 +2990,6 @@ function renderFieldAdvisory(current, daily) {
     </div>
   </div>`;
 }
-
-// renderFCCResults / renderLocalFallback removed — FCC lookup replaced by static ISP listing
-function renderFCCResults() { renderDefaultISPs(); }
-function renderLocalFallback() { renderDefaultISPs(); }
 
 // ════════════════════════════════════════════════════════════════════
 //  CLOUD SYNC — JSONBin.io (free, open-source compatible)
@@ -3231,7 +3203,7 @@ function initApp() {
   
   
   
-  loadState();  
+  loadState();
   // Pre-load AT&T leads so dashboard count is correct before map tab opens  
   if (state.pins.length < 100) {  
     const _e2 = new Set(state.pins.map(p=>p.id));  
@@ -3266,38 +3238,45 @@ function initApp() {
     addRepProfile(savedRep);  
   }  
   
+  // Load saved daily notes
+  const savedNotes = localStorage.getItem('fo_notes') || '';
+  const notesEl = document.getElementById('daily-notes');
+  if (notesEl) notesEl.value = savedNotes;
+
   // Google Maps loads on-demand when user clicks the Map tab  
   
   // Fetch live weather  
   fetchWeather();  
   setInterval(fetchWeather, 10 * 60 * 1000);  
   
+  // Start live clock
+  updateClock();
+  setInterval(updateClock, 1000);
+
   // Real-time dashboard refresh every 30 seconds  
   setInterval(() => {  
     renderDashboard();  
     updateBadges();  
   }, 30 * 1000);  
   
-  // Real-time appointment list refresh every minute  
+  // Refresh appointments/calendar every minute when section is in viewport
   setInterval(() => {  
-    if (document.getElementById('calendar-panel')?.classList.contains('active')) {  
+    const calSec = document.getElementById('cal-sec');
+    if (calSec && calSec.getBoundingClientRect().top < window.innerHeight) {
       renderApptList();  
       renderCustomCalendar();  
     }  
   }, 60 * 1000);  
   
-  // Auto-refresh outage data every 5 minutes when outage tab is open  
+  // Auto-refresh outage data every 5 minutes when outage section is in viewport
   setInterval(() => {  
-    if (document.getElementById('outage-panel')?.classList.contains('active')) {  
+    const outageSec = document.getElementById('outage-sec');
+    if (outageSec && outageSec.getBoundingClientRect().top < window.innerHeight) {  
       fetchOutages();  
     }  
-  }, 5 * 60 * 1000);  
-  
-  const savedNotes = localStorage.getItem('fo_notes') || '';  
-  const notesEl = document.getElementById('daily-notes');  
-  if (notesEl) notesEl.value = savedNotes;  
-}  
-  
+  }, 5 * 60 * 1000);
+}
+
 window.initMap = function() {  
   state.mapsLoaded = true;  
   const _ls = document.getElementById('map-load-screen');  
@@ -3441,13 +3420,9 @@ function scrollToSec(id) {
   
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }  
   
-function updateHeaderWeatherDirect(icon, temp) { setText('hw-icon', icon); setText('hw-temp', temp); }  
+function updateHeaderWeatherDirect(icon, temp, desc) { setText('hw-icon', icon); setText('hw-temp', temp); if (desc) { const el = document.getElementById('nav-weather-widget'); if (el) el.title = desc; } }  
 // Start  
 document.addEventListener('DOMContentLoaded', initApp);  
-  
-// Polling  
-setInterval(() => renderDashboard(), 30000);  
-setInterval(() => { if (document.getElementById('cal-sec')?.getBoundingClientRect().top < window.innerHeight) { renderApptList(); renderCustomCalendar(); }}, 60000);  
 </script>  
 
 <hr class="div">
@@ -3483,6 +3458,10 @@ setInterval(() => { if (document.getElementById('cal-sec')?.getBoundingClientRec
   </div>
   <div style="margin-top:10px;padding:8px 12px;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--t3);">
     ℹ️ Speeds are max advertised. Actual speeds vary. Symmetrical (↑↓) speeds indicate true fiber. Satellite latency is typically 20–600ms. Coverage percentages from FCC BDC data as of Dec 2024.
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title">📰 Fiber &amp; Broadband News</div>
+    <div id="fiber-news-list"><div class="empty"><div class="empty-icon">📡</div>Loading news…</div></div>
   </div>
 </section>  
 </body>  
