@@ -493,50 +493,91 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <div class="sec-label">— MONITORING</div>
   <div class="sec-head">
     <span style="font-size:22px;font-weight:900;">⚡ Outages</span>
-    <div style="display:flex;gap:8px;align-items:center;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <span id="outage-last-updated" style="font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;"></span>
+      <button class="btn btn-g btn-sm" onclick="openCFSettings()" title="Configure Cloudflare Radar API key">⚙️ CF Key</button>
       <button class="btn btn-g btn-sm" id="outage-refresh-btn" onclick="fetchOutages()">🔄 Refresh</button>
     </div>
   </div>
   <!-- tab nav -->
   <div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:0;">
-    <button id="otab-electric" class="otab active" onclick="switchOutageTab('electric')" style="padding:6px 16px;background:none;border:none;border-bottom:2px solid var(--amber);color:var(--t1);font-size:12px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;">⚡ Electricity</button>
-    <button id="otab-internet" class="otab" onclick="switchOutageTab('internet')" style="padding:6px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--t3);font-size:12px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;">📶 Internet</button>
+    <button id="otab-electric" onclick="switchOutageTab('electric')" style="padding:6px 16px;background:none;border:none;border-bottom:2px solid var(--amber);color:var(--t1);font-size:12px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;">⚡ Electricity</button>
+    <button id="otab-internet" onclick="switchOutageTab('internet')" style="padding:6px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--t3);font-size:12px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;">📶 Internet</button>
   </div>
-  <!-- electricity panel -->
+
+  <!-- ── ELECTRICITY PANEL ──────────────────────────────────────────── -->
+
   <div id="opanel-electric">
-    <div class="stats">
-      <div class="stat red"><div class="stat-n" id="out-active">—</div><div class="stat-l">Active</div></div>
-      <div class="stat amber"><div class="stat-n" id="out-customers">—</div><div class="stat-l">Affected</div></div>
-      <div class="stat green"><div class="stat-n" id="out-restored">—</div><div class="stat-l">Restored</div></div>
-      <div class="stat"><div class="stat-n" id="out-eta">—</div><div class="stat-l">Avg ETA hrs</div></div>
+    <!-- NWS Official Alerts (api.weather.gov — public, no auth) -->
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">🚨 NWS Official Alerts — Monterey County
+        <a href="https://www.weather.gov/mtr/" target="_blank" style="font-size:10px;color:var(--cyan);font-weight:400;text-decoration:none;">weather.gov/mtr ↗</a>
+      </div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;">Live · api.weather.gov · Zones CAZ046 &amp; CAZ530 · No auth required</div>
+      <div id="nws-alert-list"><div class="empty"><div class="empty-icon">🌐</div>Loading NWS alerts…</div></div>
     </div>
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-title">⚡ PG&amp;E Power Outages — Monterey County</div>
-      <div style="font-size:10px;color:var(--t3);margin-bottom:10px;font-family:'IBM Plex Mono',monospace;">Source: PG&amp;E Outage Center · pge.com/outages</div>
-      <div id="outage-list"><div class="empty"><div class="empty-icon">⚡</div>Click Refresh to load.</div></div>
-    </div>
+
+```
+<!-- PG&E Outages (live API attempt) -->
+<div class="stats" style="margin-bottom:12px;">
+  <div class="stat red"><div class="stat-n" id="out-active">—</div><div class="stat-l">Active</div></div>
+  <div class="stat amber"><div class="stat-n" id="out-customers">—</div><div class="stat-l">Affected</div></div>
+  <div class="stat green"><div class="stat-n" id="out-restored">—</div><div class="stat-l">Restored</div></div>
+  <div class="stat"><div class="stat-n" id="out-eta" style="font-size:14px;">—</div><div class="stat-l">Avg ETA</div></div>
+</div>
+<div class="card" style="margin-bottom:12px;">
+  <div class="card-title">⚡ PG&amp;E Power Outages — Monterey County
+    <a href="https://www.pge.com/en/outages.html" target="_blank" class="btn btn-g btn-sm" style="font-size:10px;padding:3px 8px;">pge.com ↗</a>
   </div>
-  <!-- internet panel -->
+  <div id="pge-source-label" style="font-size:10px;color:var(--t3);margin-bottom:10px;font-family:'IBM Plex Mono',monospace;">Connecting to PG&amp;E outage API…</div>
+  <div id="outage-list"><div class="empty"><div class="empty-icon">⚡</div>Loading…</div></div>
+</div>
+```
+
+  </div>
+
+  <!-- ── INTERNET PANEL ──────────────────────────────────────────────── -->
+
   <div id="opanel-internet" style="display:none;">
-    <div class="stats">
-      <div class="stat red"><div class="stat-n" id="inet-out-active">—</div><div class="stat-l">Active</div></div>
-      <div class="stat amber"><div class="stat-n" id="inet-out-customers">—</div><div class="stat-l">Affected</div></div>
-      <div class="stat green"><div class="stat-n" id="inet-out-restored">—</div><div class="stat-l">Restored</div></div>
-      <div class="stat"><div class="stat-n" id="inet-out-isps">—</div><div class="stat-l">ISPs Impacted</div></div>
+    <!-- ISP Live Status Cards -->
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">📶 ISP Live Status — Monterey County Area
+        <span style="font-size:10px;color:var(--t3);font-weight:400;">Via StatusPage.io public APIs</span>
+      </div>
+      <div id="isp-status-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:6px;"></div>
     </div>
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-title">📶 Internet Outages — Monterey County</div>
-      <div style="font-size:10px;color:var(--t3);margin-bottom:10px;font-family:'IBM Plex Mono',monospace;">Source: DownDetector trends · ISP status pages · field reports</div>
-      <div id="inet-outage-list"></div>
-    </div>
+
+```
+<!-- Cloudflare Radar (optional API key) -->
+<div class="card" style="margin-bottom:12px;">
+  <div class="card-title">🌐 Cloudflare Radar — Global Internet Health
+    <a href="https://radar.cloudflare.com/" target="_blank" style="font-size:10px;color:var(--cyan);font-weight:400;text-decoration:none;">radar.cloudflare.com ↗</a>
   </div>
+  <div id="cf-status-label" style="font-size:10px;color:var(--t3);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;">api.cloudflare.com/v4/radar · Free API key required</div>
+  <div id="cf-outage-list"><div style="font-size:12px;color:var(--t2);padding:8px 0;">
+    <span id="cf-no-key-msg">Add a free Cloudflare API key (⚙️ CF Key above) to view regional internet outage annotations.</span>
+  </div></div>
+</div>
+
+<!-- Internet stats summary -->
+<div class="stats" style="margin-bottom:12px;">
+  <div class="stat red"><div class="stat-n" id="inet-out-active">—</div><div class="stat-l">Degraded ISPs</div></div>
+  <div class="stat green"><div class="stat-n" id="inet-out-restored">—</div><div class="stat-l">Operational</div></div>
+  <div class="stat amber"><div class="stat-n" id="inet-out-isps">—</div><div class="stat-l">Total Checked</div></div>
+  <div class="stat"><div class="stat-n" id="inet-out-customers" style="font-size:14px;">—</div><div class="stat-l">CF Events</div></div>
+</div>
+```
+
+  </div>
+
+  <!-- Field Report (both tabs) -->
+
   <div class="card">
     <div class="card-title">📝 Report Local Outage</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div class="fg" style="margin-bottom:0;"><label>Area / Address *</label><input type="text" id="report-area" placeholder="North Salinas, Hwy 68…"><input type="hidden" id="report-location"></div>
       <div class="fg" style="margin-bottom:0;"><label>Provider</label>
-        <select id="report-isp"><option value="PGE">PG&E (Electric)</option><option value="ATT">AT&T</option><option value="Xfinity">Xfinity</option><option value="Spectrum">Spectrum</option><option value="Sonic">Sonic</option><option value="Starlink">Starlink</option><option value="Other">Other</option></select>
+        <select id="report-isp"><option value="PGE">PG&E (Electric)</option><option value="ATT">AT&T</option><option value="Xfinity">Xfinity</option><option value="Spectrum">Spectrum</option><option value="Sonic">Sonic</option><option value="Starlink">Starlink</option><option value="Frontier">Frontier</option><option value="Other">Other</option></select>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;">
@@ -682,7 +723,27 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 </div>
 
-<!-- ═══ LEADERBOARD ══════════════════════════════════════════════════ -->  
+<!-- Cloudflare Radar API Key Modal -->
+
+<div class="mo" id="cf-modal" onclick="if(event.target===this)closeCFSettings()">
+  <div class="modal" style="max-width:440px;">
+    <h3>🌐 Cloudflare Radar Setup</h3>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:16px;line-height:1.7;">
+      1. Go to <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" style="color:var(--cyan);">dash.cloudflare.com → API Tokens</a>.<br>
+      2. Create Token → "Read" template → Radar: Read.<br>
+      3. Copy the token and paste below.<br>
+      <span style="color:var(--green);">Free plan includes 100,000 API calls/month.</span>
+    </div>
+    <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t2);">API Token (Bearer)</label>
+    <input type="password" id="cf-api-token" placeholder="Paste your Cloudflare API token…" style="width:100%;margin:6px 0 16px;font-size:13px;font-family:'IBM Plex Mono',monospace;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="btn btn-g btn-sm" onclick="testCFToken()">🔌 Test Token</button>
+      <button class="btn btn-g btn-sm" style="color:var(--red);" onclick="removeCFToken()">🗑 Remove</button>
+      <button class="btn btn-sm" style="background:var(--cyan);color:#000;font-weight:700;" onclick="saveCFSettings()">💾 Save</button>
+    </div>
+    <div id="cf-test-result" style="margin-top:10px;font-size:12px;font-family:'IBM Plex Mono',monospace;min-height:18px;"></div>
+  </div>
+</div>
 
 <section id="lb-sec" class="sec" style="padding-bottom:60px;">  
   <div class="sec-label">— PERFORMANCE</div>  
@@ -940,25 +1001,21 @@ const FRONTIER_ADDONS = { copper: 10, whw: 10, vas: 5, voip: 10 };
   
 // ===== MOCK OUTAGE DATA =====  
 // Realistic PG&E outage data based on actual Monterey County patterns (Dec 2025–Jan 2026 storm season)
-const MOCK_OUTAGES = [
-  { id: 'PGE-2601', area: 'Del Monte Forest / Pebble Beach', city: 'Pebble Beach', customers: 5200, cause: 'Tree on 69kV transmission line (storm damage)', started: '', eta: '', status: 'active', type: 'unplanned' },
-  { id: 'PGE-2602', area: 'North Salinas — Boronda Rd corridor', city: 'Salinas', customers: 840, cause: 'Equipment failure — transformer overload', started: '', eta: '', status: 'active', type: 'unplanned' },
-  { id: 'PGE-2603', area: 'Pacific Grove — Forest Ave / Lighthouse Ave', city: 'Pacific Grove', customers: 1340, cause: 'Wind damage — multiple downed conductors', started: '', eta: '', status: 'active', type: 'unplanned' },
-  { id: 'PGE-2604', area: 'Prunedale — Moro Rd / San Miguel Canyon Rd', city: 'Prunedale', customers: 380, cause: 'Vegetation contact — oak tree growth', started: '', eta: '', status: 'active', type: 'unplanned' },
-  { id: 'PGE-2605', area: 'Carmel Valley Village — Carmel Valley Rd', city: 'Carmel Valley', customers: 210, cause: 'Scheduled maintenance — line reconductoring', started: '', eta: '', status: 'active', type: 'planned' },
-  { id: 'PGE-2606', area: 'Watsonville — Airport Blvd / Holohan Rd', city: 'Watsonville', customers: 620, cause: 'Substation switching fault', started: '', eta: '', status: 'restored', type: 'unplanned' },
-  { id: 'PGE-2607', area: 'Marina — Del Monte Blvd / Reservation Rd', city: 'Marina', customers: 475, cause: 'Vehicle-into-pole accident', started: '', eta: '', status: 'restored', type: 'unplanned' },
-  { id: 'PGE-2608', area: 'Seaside — Broadway Ave / Fremont Blvd', city: 'Seaside', customers: 290, cause: 'PSPS — red flag conditions (winds 45+ mph)', started: '', eta: '', status: 'restored', type: 'planned' },
-];
+// ─── REAL OUTAGE DATA SOURCES ────────────────────────────────────────────
+// ISPs with public StatusPage.io APIs (no auth required, CORS-friendly)
+const ISP_STATUS_ENDPOINTS = {
+  'Sonic':    { url:'https://status.sonic.net/api/v2/summary.json',       color:'#ff6b00', website:'https://status.sonic.net/',    type:'Fiber/DSL' },
+  'Starlink': { url:'https://status.starlink.com/api/v2/summary.json',    color:'#888888', website:'https://status.starlink.com/', type:'Satellite' },
+  'Frontier': { url:'https://status.frontier.com/api/v2/summary.json',    color:'#cc0000', website:'https://status.frontier.com/', type:'Fiber' },
+  'AT&T':     { url:null, color:'#00a8e0', website:'https://www.att.com/help/tech-help/internet-outage-information/', type:'Fiber/DSL' },
+  'Xfinity':  { url:null, color:'#d30000', website:'https://www.xfinity.com/support/status', type:'Cable' },
+  'Spectrum': { url:null, color:'#0033a0', website:'https://www.spectrum.net/support/internet/spectrum-internet-outage-information/', type:'Cable' },
+  'Viasat':   { url:'https://status.viasat.com/api/v2/summary.json',      color:'#005b99', website:'https://status.viasat.com/',   type:'Satellite' },
+};
 
-// Realistic internet outage data based on known ISP infrastructure in Monterey County
-const MOCK_INET_OUTAGES = [
-  { id: 'ISP-001', isp: 'AT&T Fiber', area: 'North Salinas — Sanborn Rd area', city: 'Salinas', customers: 340, cause: 'Fiber cut during PG&E utility work', started: '', eta: '', status: 'active', type: 'internet' },
-  { id: 'ISP-002', isp: 'Xfinity',   area: 'Seaside — Fremont Blvd node', city: 'Seaside', customers: 120, cause: 'Node amplifier failure', started: '', eta: '', status: 'active', type: 'internet' },
-  { id: 'ISP-003', isp: 'AT&T',      area: 'Monterey — Lighthouse Ave / David Ave', city: 'Monterey', customers: 88, cause: 'Storm water intrusion in pedestal', started: '', eta: '', status: 'active', type: 'internet' },
-  { id: 'ISP-004', isp: 'Spectrum',  area: 'Watsonville — Freedom Blvd area', city: 'Watsonville', customers: 215, cause: 'Scheduled node maintenance', started: '', eta: '', status: 'restored', type: 'internet' },
-  { id: 'ISP-005', isp: 'Sonic',     area: 'Pacific Grove — Forest Ave CO', city: 'Pacific Grove', customers: 55, cause: 'DSL DSLAM card failure at central office', started: '', eta: '', status: 'restored', type: 'internet' },
-];  
+// NWS zones covering Monterey County CA
+const NWS_ZONES = 'CAZ046,CAZ530';  // Salinas Valley/Bay + Monterey Fire Zone
+
   
 // ===== GOOGLE MAPS MUTABLE GLOBALS =====  
 let territories       = [];   // drawn territory polygons  
@@ -2413,79 +2470,387 @@ function clearLeaderboardDemo() {
   renderLeaderboard(); renderSales(); renderPipeline(); updateBadges();  
 }  
   
-function fetchOutages() {
+// ════════════════════════════════════════════════════════════════════
+//  REAL OUTAGE DATA — NWS + PG&E + ISP StatusPage + Cloudflare Radar
+// ════════════════════════════════════════════════════════════════════
+
+async function fetchOutages() {
   const btn = document.getElementById('outage-refresh-btn');
-  if (btn) { btn.textContent = '⏳ Loading...'; btn.disabled = true; }
-
-  const done = () => {
-    if (btn) { btn.textContent = '🔄 Refresh'; btn.disabled = false; }
+  if (btn) { btn.textContent = '⏳ Loading…'; btn.disabled = true; }
+  const stamp = () => {
     const lbl = document.getElementById('outage-last-updated');
-    if (lbl) lbl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'});
+    if (lbl) lbl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    if (btn) { btn.textContent = '🔄 Refresh'; btn.disabled = false; }
   };
-
-  // Try PG&E real API first (CORS-permissive endpoint)
-  fetch('https://pgealerts.alerts.pge.com/outagecenterapi/external/getOutageStats?hashed=false', {
-    signal: AbortSignal.timeout(5000)
-  })
-  .then(r => r.ok ? r.json() : Promise.reject(r.status))
-  .then(data => {
-    const outages = (data?.currentOutages || []).map((o, i) => ({
-      id: o.outageid || i,
-      area: o.district || o.circuitname || 'Unknown area',
-      city: o.city || 'Monterey County',
-      customers: parseInt(o.custAffected) || 0,
-      cause: o.cause || 'Under investigation',
-      started: o.crewCurrentStatus?.startdtm || '',
-      eta: o.estimatedRestoreTime || 'TBD',
-      status: o.crewCurrentStatus?.enddtm ? 'restored' : 'active',
-      type: o.planned ? 'planned' : 'unplanned'
-    }));
-    renderOutages(outages.length ? outages : stampedMockOutages());
-    done();
-  })
-  .catch(() => {
-    renderOutages(stampedMockOutages());
-    done();
-  });
+  // Run all real-data fetches in parallel
+  await Promise.all([fetchNWSAlerts(), fetchPGELive()]);
+  stamp();
 }
 
-function stampedMockOutages() {
-  const now = new Date();
-  const fmt = d => d.toISOString().slice(0,16).replace('T',' ');
-  return MOCK_OUTAGES.map((o, i) => ({
-    ...o,
-    started: o.started || fmt(new Date(now - (i * 47 + 30) * 60000 * 15)),
-    eta:     o.eta     || (o.status === 'restored' ? 'Restored' : fmt(new Date(now.getTime() + (1.5 + i * 0.8) * 3600000)))
+// ── National Weather Service — api.weather.gov (free, no auth, CORS ✅) ──
+async function fetchNWSAlerts() {
+  const el = document.getElementById('nws-alert-list');
+  if (!el) return;
+  try {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 10000);
+    const resp = await fetch(
+      `https://api.weather.gov/alerts/active?zone=${NWS_ZONES}&status=actual&message_type=alert,update`,
+      { signal: controller.signal, headers: { 'Accept': 'application/geo+json', 'User-Agent': 'FieldOpsCRM/1.0' } }
+    );
+    if (!resp.ok) throw new Error(`NWS ${resp.status}`);
+    const data = await resp.json();
+    renderNWSAlerts(data.features || []);
+  } catch(e) {
+    el.innerHTML = `<div class="act-item" style="border-left:3px solid var(--amber);">
+      <div>⚠️ NWS API unreachable (${e.message}). Check
+        <a href="https://alerts.weather.gov/" target="_blank" style="color:var(--cyan);">alerts.weather.gov</a> directly.
+      </div>
+    </div>`;
+  }
+}
+
+function renderNWSAlerts(features) {
+  const el = document.getElementById('nws-alert-list');
+  if (!el) return;
+  if (!features.length) {
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(0,230,118,.07);border-radius:8px;border:1px solid rgba(0,230,118,.15);">
+      <span style="font-size:18px;">✅</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--green);">No Active Alerts</div>
+        <div style="font-size:11px;color:var(--t3);">Monterey County — CAZ046 &amp; CAZ530 — All clear as of ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>
+      </div>
+    </div>`;
+    return;
+  }
+  const SEVERITY_COLOR = { Extreme:'var(--red)', Severe:'var(--red)', Moderate:'var(--amber)', Minor:'var(--cyan)', Unknown:'var(--t3)' };
+  const URGENCY_ICON   = { Immediate:'🚨', Expected:'⚠️', Future:'📅', Past:'✅', Unknown:'ℹ️' };
+  el.innerHTML = features.map(f => {
+    const p = f.properties;
+    const color = SEVERITY_COLOR[p.severity] || 'var(--t3)';
+    const icon  = URGENCY_ICON[p.urgency] || '⚠️';
+    const onset = p.onset ? new Date(p.onset).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+    const ends  = p.ends  ? new Date(p.ends).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : (p.expires ? new Date(p.expires).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—');
+    return `<div style="padding:10px 12px;border:1px solid ${color}33;border-left:3px solid ${color};border-radius:0 8px 8px 0;margin-bottom:6px;background:rgba(0,0,0,.2);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span>${icon}</span>
+        <strong style="color:${color};font-size:12px;">${sanitize(p.event)}</strong>
+        <span style="margin-left:auto;font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;">${p.severity} / ${p.urgency}</span>
+      </div>
+      <div style="font-size:11px;color:var(--t2);margin-bottom:3px;">${sanitize(p.headline || p.description?.slice(0,160) || '')}${(p.description?.length||0)>160?'…':''}</div>
+      <div style="font-size:10px;color:var(--t3);font-family:'IBM Plex Mono',monospace;">Onset: ${onset} · Expires: ${ends}</div>
+      ${p.instruction ? `<div style="font-size:11px;color:var(--amber);margin-top:4px;">📋 ${sanitize(p.instruction.slice(0,180))}${p.instruction.length>180?'…':''}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── PG&E Outage API (public endpoint, CORS may vary) ──────────────────────
+async function fetchPGELive() {
+  const srcLabel = document.getElementById('pge-source-label');
+  const listEl   = document.getElementById('outage-list');
+  if (srcLabel) srcLabel.textContent = 'Connecting to PG&E outage API…';
+
+  // PG&E public outage stats endpoints (no OAuth required for stats)
+  const PGE_ENDPOINTS = [
+    'https://pgealerts.alerts.pge.com/outagecenterapi/external/getOutageStats?hashed=false',
+    'https://pgealerts.alerts.pge.com/api/v1/public/outages/stats',
+  ];
+
+  let data = null;
+  let successUrl = '';
+  for (const url of PGE_ENDPOINTS) {
+    try {
+      const ctrl = new AbortController();
+      setTimeout(() => ctrl.abort(), 8000);
+      const resp = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      data = await resp.json();
+      successUrl = url;
+      break;
+    } catch(e) { /* try next */ }
+  }
+
+  if (!data) {
+    // Could not reach PG&E API from browser (CORS blocked or service unavailable)
+    if (srcLabel) srcLabel.innerHTML = `<span style="color:var(--amber);">⚠️ PG&E API blocked (CORS) — data cannot be fetched directly from browser. View live data:</span>`;
+    if (listEl) listEl.innerHTML = `
+      <div style="padding:14px;border:1px solid var(--border);border-radius:8px;background:var(--bg-panel);">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Live outage data available at official sources:</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <a href="https://www.pge.com/en/outages.html" target="_blank" style="color:var(--cyan);font-size:12px;display:flex;align-items:center;gap:6px;">⚡ PG&E Outage Center Map → pge.com/outages</a>
+          <a href="https://pgealerts.alerts.pge.com/" target="_blank" style="color:var(--cyan);font-size:12px;display:flex;align-items:center;gap:6px;">📡 PG&E Alerts Portal → pgealerts.alerts.pge.com</a>
+          <a href="https://www.pge.com/en/account/outages-and-safety/outage-preparedness/public-safety-power-shutoffs.html" target="_blank" style="color:var(--amber);font-size:12px;display:flex;align-items:center;gap:6px;">🔒 PSPS Info → Public Safety Power Shutoff Status</a>
+        </div>
+        <div style="margin-top:12px;padding:8px 12px;background:rgba(0,0,0,.2);border-radius:6px;font-size:11px;color:var(--t3);">
+          Why can't this load directly? PG&E's API does not allow cross-origin browser requests (CORS policy). 
+          NWS alerts above use a public CORS-enabled government API and always load live.
+        </div>
+      </div>`;
+    setText('out-active', '—'); setText('out-customers', '—'); setText('out-restored', '—'); setText('out-eta', '—');
+    return;
+  }
+
+  renderPGEOutages(data, successUrl);
+}
+
+function renderPGEOutages(data, sourceUrl) {
+  const srcLabel = document.getElementById('pge-source-label');
+  const listEl   = document.getElementById('outage-list');
+  if (srcLabel) srcLabel.innerHTML = `<span style="color:var(--green);">✅ Live · ${sanitize(sourceUrl)}</span>`;
+
+  // Normalize PG&E response — their schema varies by endpoint
+  let outages = [];
+  if (Array.isArray(data)) outages = data;
+  else if (data.currentOutages) outages = data.currentOutages;
+  else if (data.outages) outages = data.outages;
+  else if (data.data) outages = data.data;
+
+  const normalized = outages.map((o, i) => ({
+    id: o.outageid || o.id || `pge-${i}`,
+    area: o.district || o.circuitname || o.location || o.area || 'Area not specified',
+    city: o.city || o.county || 'Monterey County',
+    customers: parseInt(o.custAffected || o.customersAffected || o.customers || 0),
+    cause: o.cause || o.crewCurrentStatus?.description || 'Under investigation',
+    started: o.crewCurrentStatus?.startdtm || o.startedAt || o.startTime || '',
+    eta: o.estimatedRestoreTime || o.eta || o.etr || 'TBD',
+    status: (o.crewCurrentStatus?.enddtm || o.restoredAt || o.status === 'restored') ? 'restored' : 'active',
+    type: o.planned || o.plannedOutage ? 'planned' : 'unplanned'
   }));
-}  
-  
-function renderOutages(data) {
-  const active = data.filter(o => o.status === 'active');
-  const restored = data.filter(o => o.status === 'restored');
-  const totalCustomers = active.reduce((s, o) => s + (o.customers || 0), 0);
 
-  document.getElementById('out-active').textContent = active.length;
-  document.getElementById('out-customers').textContent = totalCustomers.toLocaleString();
-  document.getElementById('out-restored').textContent = restored.length;
-  document.getElementById('out-eta').textContent = '~4';
+  const active   = normalized.filter(o => o.status === 'active');
+  const restored = normalized.filter(o => o.status === 'restored');
+  const totalCust = active.reduce((s, o) => s + o.customers, 0);
 
-  const list = document.getElementById('outage-list');
-  list.innerHTML = data.map(o => `
-    <div class="outage-item ${o.type === 'planned' ? 'planned' : ''} ${o.status === 'restored' ? 'restored' : ''}">
+  setText('out-active', active.length || '0');
+  setText('out-customers', totalCust.toLocaleString() || '0');
+  setText('out-restored', restored.length || '0');
+  setText('out-eta', active.length ? '~' + Math.ceil(active.length * 2) + 'h' : 'N/A');
+
+  if (!normalized.length) {
+    if (listEl) listEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(0,230,118,.07);border-radius:8px;border:1px solid rgba(0,230,118,.15);">
+      <span style="font-size:18px;">✅</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--green);">No outages reported</div>
+        <div style="font-size:11px;color:var(--t3);">PG&E reports all systems normal as of ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>
+      </div>
+    </div>`;
+    return;
+  }
+
+  if (listEl) listEl.innerHTML = normalized.map(o => `
+    <div class="outage-item ${o.type==='planned'?'planned':''} ${o.status==='restored'?'restored':''}">
       <div class="outage-location">
-        ${o.status === 'restored' ? '✅' : o.type === 'planned' ? '🔧' : '⚡'} ${o.area}
-        <span style="font-size:10px;color:var(--t3);font-weight:400;margin-left:6px;">${o.city}</span>
+        ${o.status==='restored'?'✅':o.type==='planned'?'🔧':'⚡'} ${sanitize(o.area)}
+        <span style="font-size:10px;color:var(--t3);font-weight:400;margin-left:6px;">${sanitize(o.city)}</span>
+        ${o.type==='planned'?'<span style="font-size:9px;padding:1px 6px;background:rgba(0,212,255,.1);color:var(--cyan);border-radius:4px;margin-left:4px;">PLANNED</span>':''}
       </div>
       <div class="outage-detail">
         <span class="outage-customers">${(o.customers||0).toLocaleString()} customers affected</span><br>
-        Cause: ${o.cause}<br>
-        Started: ${o.started}<br>
-        Est. Restore: <strong style="color:${o.status==='restored'?'var(--green)':'var(--amber)'}">${o.eta}</strong>
-        ${o.type==='planned'?'<span style="margin-left:8px;font-size:10px;padding:2px 6px;background:rgba(0,212,255,.1);color:var(--cyan);border-radius:4px;">PLANNED</span>':''}
+        Cause: ${sanitize(o.cause)}<br>
+        ${o.started?`Started: ${sanitize(o.started)}<br>`:''}
+        Est. Restore: <strong style="color:${o.status==='restored'?'var(--green)':'var(--amber)'}">${sanitize(o.eta)}</strong>
       </div>
-    </div>
-  `).join('');
-}  
+    </div>`).join('');
+}
+
+// ── Internet: ISP StatusPage.io APIs + Cloudflare Radar ─────────────────
+async function fetchInetStatus() {
+  const grid = document.getElementById('isp-status-grid');
+  if (!grid) return;
+
+  // Show loading skeletons
+  grid.innerHTML = Object.keys(ISP_STATUS_ENDPOINTS).map(name =>
+    `<div id="isp-card-${name.replace(/[^a-z]/gi,'')}" style="padding:12px;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;gap:4px;">
+      <div style="font-size:11px;font-weight:700;color:${ISP_STATUS_ENDPOINTS[name].color};">${name}</div>
+      <div style="font-size:10px;color:var(--t3);">Checking…</div>
+    </div>`
+  ).join('');
+
+  let operational = 0, degraded = 0;
+
+  // Fetch all ISP statuses in parallel
+  await Promise.all(Object.entries(ISP_STATUS_ENDPOINTS).map(async ([name, cfg]) => {
+    const cardId = `isp-card-${name.replace(/[^a-z]/gi,'')}`;
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    let status = null;
+    if (cfg.url) {
+      try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 7000);
+        const resp = await fetch(cfg.url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        status = await resp.json();
+      } catch(e) { /* fall through — link mode */ }
+    }
+
+    let indicatorHtml = '';
+    let detailHtml = '';
+
+    if (status) {
+      const indicator = status.status?.indicator || status.page?.status?.indicator || 'unknown';
+      const desc = status.status?.description || status.page?.status?.description || 'Status unknown';
+      const isOk = indicator === 'none' || indicator === 'operational';
+      const indColor = isOk ? 'var(--green)' : indicator === 'major_outage' ? 'var(--red)' : 'var(--amber)';
+      const indIcon  = isOk ? '✅' : indicator === 'major_outage' ? '🔴' : '🟡';
+
+      if (isOk) operational++; else degraded++;
+
+      // Active incidents
+      const incidents = (status.incidents || []).filter(i => i.status !== 'resolved').slice(0,2);
+      const incHtml = incidents.map(i =>
+        `<div style="font-size:10px;color:var(--amber);margin-top:2px;">⚠️ ${sanitize(i.name?.slice(0,60) || 'Incident reported')}</div>`
+      ).join('');
+
+      indicatorHtml = `<div style="display:flex;align-items:center;gap:4px;"><span>${indIcon}</span><span style="font-size:11px;color:${indColor};font-weight:700;">${sanitize(desc)}</span></div>`;
+      detailHtml = incHtml;
+    } else {
+      // No API — link mode
+      operational++; // count as unknown/operational
+      indicatorHtml = `<div style="font-size:11px;color:var(--t3);">🔗 Status page available</div>`;
+      detailHtml = '';
+    }
+
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:${cfg.color};">${name}</div>
+          <div style="font-size:9px;color:var(--t3);">${cfg.type}</div>
+        </div>
+        ${status ? `<span style="font-size:9px;color:var(--green);font-family:'IBM Plex Mono',monospace;">LIVE</span>` : `<a href="${cfg.website}" target="_blank" style="font-size:9px;color:var(--cyan);">CHECK ↗</a>`}
+      </div>
+      ${indicatorHtml}
+      ${detailHtml}
+      ${!status ? `<a href="${cfg.website}" target="_blank" style="font-size:10px;color:var(--cyan);margin-top:2px;">${cfg.website.replace('https://','').replace(/\/.*$/,'')} ↗</a>` : ''}`;
+  }));
+
+  const total = Object.keys(ISP_STATUS_ENDPOINTS).length;
+  setText('inet-out-active',    degraded);
+  setText('inet-out-restored',  operational);
+  setText('inet-out-isps',      total);
+
+  // Also try Cloudflare Radar
+  fetchCloudflareOutages();
+}
+
+// ── Cloudflare Radar (free API token) ─────────────────────────────────────
+async function fetchCloudflareOutages() {
+  const token = localStorage.getItem('fo_cf_token') || '';
+  const cfEl  = document.getElementById('cf-outage-list');
+  const cfLbl = document.getElementById('cf-no-key-msg');
+  const cfStatus = document.getElementById('cf-status-label');
+
+  if (!token) {
+    if (cfEl) cfEl.innerHTML = `<div style="font-size:12px;color:var(--t2);padding:8px 0;">
+      <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" style="color:var(--cyan);">Get a free Cloudflare API token ↗</a>
+      to view regional internet disruption annotations from Cloudflare Radar.
+    </div>`;
+    return;
+  }
+
+  if (cfEl) cfEl.innerHTML = `<div style="font-size:11px;color:var(--t3);font-family:'IBM Plex Mono',monospace;">Fetching Cloudflare Radar data…</div>`;
+  if (cfStatus) cfStatus.textContent = 'api.cloudflare.com/v4/radar/annotations/outages · Authenticated';
+
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 10000);
+    const resp = await fetch(
+      'https://api.cloudflare.com/client/v4/radar/annotations/outages/details?dateRange=7d&limit=15',
+      {
+        signal: ctrl.signal,
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      }
+    );
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.errors?.[0]?.message || `HTTP ${resp.status}`);
+    }
+    const data = await resp.json();
+    renderCloudflareOutages(data.result?.annotations || []);
+    const cfEvents = (data.result?.annotations || []).length;
+    setText('inet-out-customers', cfEvents);
+    if (cfStatus) cfStatus.innerHTML = `<span style="color:var(--green);">✅ Live · api.cloudflare.com/v4/radar · ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</span>`;
+  } catch(e) {
+    if (cfEl) cfEl.innerHTML = `<div style="font-size:12px;color:var(--red);padding:8px 0;">
+      ❌ Cloudflare Radar error: ${sanitize(e.message)} — 
+      <a href="https://radar.cloudflare.com/outages" target="_blank" style="color:var(--cyan);">View radar.cloudflare.com/outages ↗</a>
+    </div>`;
+    if (cfStatus) cfStatus.innerHTML = `<span style="color:var(--red);">❌ ${sanitize(e.message)}</span>`;
+  }
+}
+
+function renderCloudflareOutages(annotations) {
+  const el = document.getElementById('cf-outage-list');
+  if (!el) return;
+  if (!annotations.length) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--green);padding:8px 0;">✅ No regional internet outage annotations from Cloudflare Radar in the past 7 days.</div>`;
+    return;
+  }
+  el.innerHTML = annotations.map(a => {
+    const startTime = a.startDate ? new Date(a.startDate).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+    const locations = (a.locations || []).join(', ') || 'Global/US';
+    const isps = (a.asns || []).map(asn => asn.name || `AS${asn.asn}`).join(', ') || 'Multiple ISPs';
+    return `<div class="act-item" style="margin-bottom:6px;border-left:3px solid var(--amber);">
+      <div style="font-size:16px;">🌐</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;">${sanitize(a.eventType || 'Internet Disruption')}
+          ${a.asns?.length ? `<span style="font-size:10px;color:var(--t3);font-weight:400;"> · ${sanitize(isps.slice(0,60))}</span>` : ''}
+        </div>
+        <div style="font-size:11px;color:var(--t2);">📍 ${sanitize(locations)} · ${startTime}</div>
+        ${a.description ? `<div style="font-size:11px;color:var(--t3);margin-top:2px;">${sanitize(a.description.slice(0,150))}${a.description.length>150?'…':''}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Cloudflare Settings Modal ──────────────────────────────────────────────
+function openCFSettings() {
+  const modal = document.getElementById('cf-modal');
+  const inp   = document.getElementById('cf-api-token');
+  if (inp) inp.value = localStorage.getItem('fo_cf_token') || '';
+  if (modal) modal.classList.add('open');
+}
+function closeCFSettings() { document.getElementById('cf-modal')?.classList.remove('open'); }
+
+function saveCFSettings() {
+  const token = document.getElementById('cf-api-token')?.value.trim();
+  if (!token) { alert('Please enter a token.'); return; }
+  localStorage.setItem('fo_cf_token', token);
+  closeCFSettings();
+  fetchCloudflareOutages();
+}
+
+function removeCFToken() {
+  if (!confirm('Remove Cloudflare API token?')) return;
+  localStorage.removeItem('fo_cf_token');
+  document.getElementById('cf-api-token').value = '';
+  const cfEl = document.getElementById('cf-outage-list');
+  if (cfEl) cfEl.innerHTML = `<div style="font-size:12px;color:var(--t2);padding:8px 0;">Token removed. <a href="#" onclick="openCFSettings()" style="color:var(--cyan);">Add token to enable Cloudflare Radar data.</a></div>`;
+  document.getElementById('cf-test-result').textContent = 'Token removed.';
+}
+
+async function testCFToken() {
+  const token = document.getElementById('cf-api-token')?.value.trim();
+  const res = document.getElementById('cf-test-result');
+  if (!token) { if (res) res.textContent = '❌ Enter a token first.'; return; }
+  if (res) res.textContent = '⏳ Testing…';
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 8000);
+    const resp = await fetch(
+      'https://api.cloudflare.com/client/v4/radar/annotations/outages/details?dateRange=1d&limit=1',
+      { signal: ctrl.signal, headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.errors?.[0]?.message || `HTTP ${resp.status}`);
+    if (res) res.innerHTML = `<span style="color:var(--green);">✅ Token valid — Cloudflare Radar connected.</span>`;
+  } catch(e) {
+    if (res) res.innerHTML = `<span style="color:var(--red);">❌ ${sanitize(e.message)}</span>`;
+  }
+}
+
+
   
 function submitOutageReport() {  
   const isp = document.getElementById('report-isp').value;  
@@ -2915,45 +3280,7 @@ function switchOutageTab(tab) {
     }
     if (panel) panel.style.display = isActive ? 'block' : 'none';
   });
-  if (tab === 'internet') renderInetOutages();
-}
-
-function renderInetOutages() {
-  const now = new Date();
-  const fmt = d => d.toISOString().slice(0,16).replace('T',' ');
-  // Stamp realistic times if blank
-  const data = MOCK_INET_OUTAGES.map((o, i) => ({
-    ...o,
-    started: o.started || fmt(new Date(now - (i * 38 + 25) * 60000 * 12)),
-    eta:     o.eta     || (o.status === 'restored' ? 'Restored' : fmt(new Date(now.getTime() + (1 + i * 0.7) * 3600000)))
-  }));
-
-  const active   = data.filter(o => o.status === 'active');
-  const restored = data.filter(o => o.status === 'restored');
-  const isps     = [...new Set(data.filter(o=>o.status==='active').map(o=>o.isp))];
-
-  setText('inet-out-active',    active.length);
-  setText('inet-out-customers', active.reduce((s,o)=>s+o.customers,0).toLocaleString());
-  setText('inet-out-restored',  restored.length);
-  setText('inet-out-isps',      isps.length);
-
-  const el = document.getElementById('inet-outage-list');
-  if (!el) return;
-  const ISP_COLORS = { 'AT&T Fiber':'#00a8e0','AT&T':'#00a8e0','Xfinity':'#d30000','Spectrum':'#0033a0','Sonic':'#ff6b00','Starlink':'#888','Viasat':'#005b99','HughesNet':'#f5a800' };
-  el.innerHTML = data.map(o => `
-    <div class="outage-item ${o.status==='restored'?'restored':''}">
-      <div class="outage-location" style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.3);border:1px solid ${ISP_COLORS[o.isp]||'#7a9ab5'};color:${ISP_COLORS[o.isp]||'#7a9ab5'};">${o.isp}</span>
-        ${o.status==='restored'?'✅':'📶'} ${o.area}
-      </div>
-      <div class="outage-detail">
-        <span class="outage-customers">${o.customers} subscribers affected · ${o.city}</span><br>
-        Cause: ${o.cause}<br>
-        Started: ${o.started}<br>
-        Status: <strong style="color:${o.status==='restored'?'var(--green)':'var(--amber)'}">${o.status==='restored'?'✅ Restored':'🔧 Active'}</strong>
-        ${o.status!=='restored'?`· ETA: ${o.eta}`:''}
-      </div>
-    </div>`).join('');
+  if (tab === 'internet') fetchInetStatus();
 }
 
 function renderAlerts(current, daily) {
@@ -2970,6 +3297,22 @@ function renderAlerts(current, daily) {
     `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,.3);border-left:3px solid ${a.color};border-radius:0 6px 6px 0;margin-bottom:6px;font-size:12px;">
       <span>${a.icon}</span><span style="color:${a.color};">${a.msg}</span>
     </div>`).join('');
+
+  // Pull NWS official alerts into weather section too (show if any are active)
+  fetch(`https://api.weather.gov/alerts/active?zone=${NWS_ZONES}&status=actual&message_type=alert,update`, {
+    headers: { Accept: 'application/geo+json', 'User-Agent': 'FieldOpsCRM/1.0' }
+  }).then(r => r.ok ? r.json() : null).then(data => {
+    if (!data || !data.features?.length) return;
+    const nwsHtml = data.features.slice(0,2).map(f => {
+      const p = f.properties;
+      const sev = p.severity;
+      const color = sev === 'Extreme' || sev === 'Severe' ? 'var(--red)' : sev === 'Moderate' ? 'var(--amber)' : 'var(--cyan)';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,.3);border-left:3px solid ${color};border-radius:0 6px 6px 0;margin-bottom:6px;font-size:12px;">
+        <span>🚨</span><span style="color:${color};">NWS: ${sanitize(p.event)} — ${sanitize((p.headline||p.description||'').slice(0,100))}${(p.headline||p.description||'').length>100?'…':''}</span>
+      </div>`;
+    }).join('');
+    el.innerHTML = (el.innerHTML || '') + nwsHtml;
+  }).catch(() => {});
 }
 
 function renderFieldAdvisory(current, daily) {
@@ -3219,12 +3562,14 @@ function initApp() {
   renderCustomCalendar();
   renderLeaderboard();
   renderDashboard(); // reflects AT&T leads just loaded
-  // Pre-populate outage data with mock on first load
-  setTimeout(() => renderOutages(stampedMockOutages()), 100);
+  // Fetch live outage data on load (NWS + PG&E live)
   renderDefaultISPs();  // render ISP lists immediately  
 
   // Initialize cloud sync badge
   initCloudSync();
+
+  // Fetch live outage data (NWS + PG&E)
+  fetchOutages();
 
   // Preload activity log from storage  
   try {  
